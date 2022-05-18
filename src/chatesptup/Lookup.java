@@ -2,11 +2,14 @@ package chatesptup;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import net.jini.core.discovery.LookupLocator;
+import net.jini.core.lookup.ServiceMatches;
 import net.jini.core.lookup.ServiceRegistrar;
 import net.jini.core.lookup.ServiceTemplate;
 import net.jini.discovery.LookupDiscovery;
 import net.jini.discovery.DiscoveryListener;
 import net.jini.discovery.DiscoveryEvent;
+import net.jini.space.JavaSpace;
 
 /**
    A class which supports a simple JINI multicast lookup.  It doesn't register
@@ -21,7 +24,7 @@ import net.jini.discovery.DiscoveryEvent;
    @author  Dan Creswell (dan@dancres.org)
    @version 1.00, 7/9/2003
  */
-class Lookup implements DiscoveryListener {
+public class Lookup implements DiscoveryListener {
     private ServiceTemplate theTemplate;
     private LookupDiscovery theDiscoverer;
 
@@ -31,7 +34,7 @@ class Lookup implements DiscoveryListener {
        @param aServiceInterface the class of the type of service you are
        looking for.  Class is usually an interface class.
      */
-    Lookup(Class aServiceInterface) {
+    public Lookup(Class aServiceInterface) {
         Class[] myServiceTypes = new Class[] {aServiceInterface};
         theTemplate = new ServiceTemplate(null, myServiceTypes, null);
     }
@@ -45,22 +48,32 @@ class Lookup implements DiscoveryListener {
        @return proxy for the service type you requested - could be an rmi
        stub or an intelligent proxy.
      */
-    Object getService() {
+    //Procura a conxeão com o servidor
+    public Object getService() throws ClassNotFoundException{
+        JavaSpace space = null;
         synchronized(this) {
             if (theDiscoverer == null) {
 
                 try {
-                    theDiscoverer =
+                    //Busca o resgistro
+                    LookupLocator ll = new LookupLocator("jini://localhost:4160");
+                    ServiceRegistrar sr = ll.getRegistrar();
+                    ServiceMatches sms = sr.lookup(theTemplate, 10);
+                    space = (JavaSpace) sms.items[0].service;
+                    
+                    /*theDiscoverer =
                         new LookupDiscovery(LookupDiscovery.ALL_GROUPS);
-                    theDiscoverer.addDiscoveryListener(this);
+                    theDiscoverer.addDiscoveryListener(this);*/
+                    
                 } catch (IOException anIOE) {
                     System.err.println("Failed to init lookup");
                     anIOE.printStackTrace(System.err);
                 }
             }
         }
-
-        return waitForProxy();
+        
+        //Retorna conexão
+        return space;
     }
 
     /**

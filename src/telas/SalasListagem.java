@@ -4,18 +4,81 @@
  */
 package telas;
 
+import java.awt.Color;
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
+import javax.swing.JOptionPane;
+import models.Sala;
+import models.TuplaEspecial;
+import models.Usuario;
+import net.jini.core.entry.UnusableEntryException;
+import net.jini.core.lease.Lease;
+import net.jini.core.transaction.TransactionException;
+import net.jini.space.JavaSpace;
+
 /**
  *
  * @author elysson
  */
 public class SalasListagem extends javax.swing.JFrame {
-
+    
+    private JavaSpace space;
+    private Usuario usuario;
+    private Sala sala;
+    private DefaultListModel listaSalas = null;
+    private DefaultListModel listaUsuarios = null;
+    
     /**
      * Creates new form SalasListagem
      */
     public SalasListagem() {
         initComponents();
     }
+    
+    public SalasListagem(Usuario usuario, JavaSpace space) throws ClassNotFoundException {
+        initComponents();
+        
+        this.space = space;
+        this.usuario = usuario;
+        
+        listaSalas = new DefaultListModel();
+        listaUsuarios = new DefaultListModel();
+        
+        buscaSalas();
+    }
+    
+    public void buscaSalas(){
+        //DestinationSource destSource = connection.getDestinationSource();
+        //Set<ActiveMQTopic> topicos = destSource.getTopics();
+        
+        TuplaEspecial template = new TuplaEspecial();
+        TuplaEspecial t = null;
+        try {
+            t = (TuplaEspecial) space.read(template, null, 500);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        Sala salaTemplate = new Sala();
+        Sala s = null;
+        for (int i = 0; i < t.qtdSalas; i++) {
+            try {
+                salaTemplate.id = (i + 1);
+                s = (Sala) space.read(salaTemplate, null, 500);
+                listaSalas.addElement(s.nome);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        this.jListSalas.setModel(listaSalas);
+        //this.jListUsuarios.setModel(listaAssin);
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -28,15 +91,13 @@ public class SalasListagem extends javax.swing.JFrame {
 
         jPanelPrincipal = new javax.swing.JPanel();
         jLabelTitulo = new javax.swing.JLabel();
-        jButtonSalvar = new javax.swing.JButton();
+        jButtonEntrar = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jListAssin = new javax.swing.JList<>();
+        jListUsuarios = new javax.swing.JList<>();
         jLabelNome1 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jListDisp = new javax.swing.JList<>();
+        jListSalas = new javax.swing.JList<>();
         jLabelNome2 = new javax.swing.JLabel();
-        jButtonAdd = new javax.swing.JButton();
-        jButtonDel = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -46,38 +107,27 @@ public class SalasListagem extends javax.swing.JFrame {
         jLabelTitulo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabelTitulo.setText("Chats Disponíveis");
 
-        jButtonSalvar.setText("Salvar");
-        jButtonSalvar.addActionListener(new java.awt.event.ActionListener() {
+        jButtonEntrar.setText("Entrar");
+        jButtonEntrar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonSalvarActionPerformed(evt);
+                jButtonEntrarActionPerformed(evt);
             }
         });
 
-        jListAssin.setBackground(new java.awt.Color(204, 204, 204));
-        jListAssin.setEnabled(false);
-        jScrollPane1.setViewportView(jListAssin);
+        jListUsuarios.setEnabled(false);
+        jScrollPane1.setViewportView(jListUsuarios);
 
         jLabelNome1.setText("Nomes das salas:");
 
-        jListDisp.setBackground(new java.awt.Color(204, 204, 204));
-        jListDisp.setEnabled(false);
-        jScrollPane2.setViewportView(jListDisp);
+        jListSalas.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jListSalas.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                jListSalasValueChanged(evt);
+            }
+        });
+        jScrollPane2.setViewportView(jListSalas);
 
         jLabelNome2.setText("Usuários presentes:");
-
-        jButtonAdd.setText(">");
-        jButtonAdd.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonAddActionPerformed(evt);
-            }
-        });
-
-        jButtonDel.setText("<");
-        jButtonDel.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonDelActionPerformed(evt);
-            }
-        });
 
         javax.swing.GroupLayout jPanelPrincipalLayout = new javax.swing.GroupLayout(jPanelPrincipal);
         jPanelPrincipal.setLayout(jPanelPrincipalLayout);
@@ -88,20 +138,19 @@ public class SalasListagem extends javax.swing.JFrame {
                 .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelPrincipalLayout.createSequentialGroup()
                         .addGap(125, 125, 125)
-                        .addComponent(jButtonSalvar))
+                        .addComponent(jButtonEntrar))
                     .addGroup(jPanelPrincipalLayout.createSequentialGroup()
                         .addContainerGap()
                         .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jLabelNome1, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButtonAdd, javax.swing.GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-                            .addComponent(jButtonDel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabelNome2, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addGroup(jPanelPrincipalLayout.createSequentialGroup()
+                                .addComponent(jLabelNome1, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jLabelNome2, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(32, 32, 32))
+                            .addGroup(jPanelPrincipalLayout.createSequentialGroup()
+                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 147, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 147, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanelPrincipalLayout.setVerticalGroup(
@@ -113,31 +162,24 @@ public class SalasListagem extends javax.swing.JFrame {
                 .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabelNome1)
                     .addComponent(jLabelNome2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanelPrincipalLayout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 152, Short.MAX_VALUE)
-                            .addComponent(jScrollPane2)))
-                    .addGroup(jPanelPrincipalLayout.createSequentialGroup()
-                        .addGap(42, 42, 42)
-                        .addComponent(jButtonAdd)
-                        .addGap(18, 18, 18)
-                        .addComponent(jButtonDel)))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1))
                 .addGap(18, 18, 18)
-                .addComponent(jButtonSalvar)
-                .addGap(52, 52, 52))
+                .addComponent(jButtonEntrar)
+                .addGap(20, 20, 20))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanelPrincipal, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPanelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jPanelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -145,52 +187,73 @@ public class SalasListagem extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButtonSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSalvarActionPerformed
-        // TODO add your handling code here:
-        /*String nome = this.jTextFieldNome.getText();
-        Cliente c = null;
-
-        if(!nome.isEmpty() && !listaAssin.isEmpty()){
-            c = new Cliente(nome, listaAssin);
-        }else{
-            JOptionPane.showMessageDialog(this, "Verifique o nome e "
-                + "os tópicos assinados", "Tente novamente!", JOptionPane.ERROR_MESSAGE);
-            return;
+    private void jButtonEntrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEntrarActionPerformed
+        String select = this.jListSalas.getSelectedValue();
+        
+        if(select != null && !select.isEmpty()){
+            
+            Usuario u = null;
+            Sala s = null;
+            try {
+                u = (Usuario) space.take(this.usuario, null, Lease.FOREVER);
+                s = (Sala) space.take(this.sala, null, 500);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if (u == null) {
+                System.out.println("Tempo de espera esgotado. Encerrando...");
+                System.exit(0);
+            }
+            u.sala = select;
+            u.id = s.qtdUsu + 1;
+            this.sala = s;
+            this.sala.qtdUsu = u.id;
+            
+            try {
+                this.space.write(this.sala, null, Lease.FOREVER);
+                this.space.write(u, null, Lease.FOREVER);
+            } catch (TransactionException | RemoteException ex) {
+                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            new Chat(this.usuario, this.space, this.sala).setVisible(true);
+            this.dispose();
         }
+    }//GEN-LAST:event_jButtonEntrarActionPerformed
 
-        try {
-            new ClienteSubscriber(c).setVisible(true);
-        } catch (Exception ex) {
-            Logger.getLogger(ClienteCadastro.class.getName()).log(Level.SEVERE, null, ex);
+    private void jListSalasValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_jListSalasValueChanged
+        String select = this.jListSalas.getSelectedValue();
+        listaUsuarios.removeAllElements();
+        
+        if(select != null && !select.isEmpty()){ 
+            Sala s = null;
+            Usuario uTemplate = new Usuario();
+            uTemplate.sala = select;
+            
+            Usuario u = null;
+            
+            this.sala = new Sala();
+            this.sala.nome = select;
+            
+            try {
+                s = (Sala) space.read(this.sala, null, Lease.FOREVER);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            for (int i = 0; i < s.qtdUsu; i++) {
+                try {
+                    uTemplate.id = (i + 1);
+                    u = (Usuario) space.read(uTemplate, null, 500);
+                    listaUsuarios.addElement(u.nome);
+                } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                    Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+            this.jListUsuarios.setModel(listaUsuarios);
         }
-        this.dispose();*/
-    }//GEN-LAST:event_jButtonSalvarActionPerformed
-
-    private void jButtonAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAddActionPerformed
-        // TODO add your handling code here:
-        /*List<String> lista = this.jListDisp.getSelectedValuesList();
-
-        for (String string : lista) {
-            listaAssin.addElement(string);
-            listaDisp.removeElement(string);
-        }
-
-        this.jListDisp.setModel(listaDisp);
-        this.jListAssin.setModel(listaAssin);*/
-    }//GEN-LAST:event_jButtonAddActionPerformed
-
-    private void jButtonDelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDelActionPerformed
-        // TODO add your handling code here:
-        /*List<String> lista = this.jListAssin.getSelectedValuesList();
-
-        for (String string : lista) {
-            listaAssin.removeElement(string);
-            listaDisp.addElement(string);
-        }
-
-        this.jListAssin.setModel(listaAssin);
-        this.jListDisp.setModel(listaDisp);*/
-    }//GEN-LAST:event_jButtonDelActionPerformed
+    }//GEN-LAST:event_jListSalasValueChanged
 
     /**
      * @param args the command line arguments
@@ -228,14 +291,12 @@ public class SalasListagem extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButtonAdd;
-    private javax.swing.JButton jButtonDel;
-    private javax.swing.JButton jButtonSalvar;
+    private javax.swing.JButton jButtonEntrar;
     private javax.swing.JLabel jLabelNome1;
     private javax.swing.JLabel jLabelNome2;
     private javax.swing.JLabel jLabelTitulo;
-    private javax.swing.JList<String> jListAssin;
-    private javax.swing.JList<String> jListDisp;
+    private javax.swing.JList<String> jListSalas;
+    private javax.swing.JList<String> jListUsuarios;
     private javax.swing.JPanel jPanelPrincipal;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

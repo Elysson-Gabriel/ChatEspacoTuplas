@@ -1,5 +1,6 @@
 package chatesptup;
 
+import models.Message;
 import net.jini.core.lease.Lease;
 import net.jini.space.JavaSpace;
 

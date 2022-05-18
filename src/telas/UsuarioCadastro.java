@@ -4,17 +4,92 @@
  */
 package telas;
 
+import chatesptup.Lookup;
+import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import models.TuplaEspecial;
+import models.Usuario;
+import net.jini.core.entry.UnusableEntryException;
+import net.jini.core.lease.Lease;
+import net.jini.core.transaction.TransactionException;
+import net.jini.space.JavaSpace;
+
 /**
  *
  * @author elysson
  */
 public class UsuarioCadastro extends javax.swing.JFrame {
-
+    
+    private JavaSpace space;
+    private Usuario usuario;
     /**
      * Creates new form UsuarioCadastro
+     * @throws java.lang.ClassNotFoundException
      */
-    public UsuarioCadastro() {
+    public UsuarioCadastro() throws ClassNotFoundException {
         initComponents();
+        
+        System.out.println("Procurando pelo servico JavaSpace...");
+        Lookup finder = new Lookup(JavaSpace.class);
+        this.space = (JavaSpace) finder.getService();
+        if (this.space == null) {
+                System.out.println("O servico JavaSpace nao foi encontrado. Encerrando...");
+                System.exit(-1);
+        } 
+        System.out.println("O servico JavaSpace foi encontrado.");
+        System.out.println(this.space);
+        
+    }
+    
+    public boolean criarUsuario(){
+        String nome = jTextFieldNome.getText();
+        boolean retorno = false;
+        
+        if(nome.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Informe o nome do usuário", 
+                    "Tente novamente!", JOptionPane.ERROR_MESSAGE);
+            return false;
+            
+        }else if(nome.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Nome de usuário já está sendo utilizado", 
+                    "Tente novamente!", JOptionPane.ERROR_MESSAGE);
+            return false;
+            
+        }else{
+            this.usuario = new Usuario();
+            this.usuario.nome = nome;
+            try {
+                this.space.write(usuario, null, Lease.FOREVER);
+                retorno = true;
+            } catch (TransactionException | RemoteException ex) {
+                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        return retorno;
+    }
+    
+    public boolean existeSala(){
+        boolean retorno = false;
+        TuplaEspecial template = new TuplaEspecial();
+        TuplaEspecial t = null;
+        
+        try {
+            t = (TuplaEspecial) space.read(template, null, 500);
+            if (t == null) {
+                JOptionPane.showMessageDialog(this, "Não existem salas, por favor crie uma nova.", 
+                    "Tente novamente!", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }else{
+                retorno = true;
+            }
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return retorno;
     }
 
     /**
@@ -30,8 +105,8 @@ public class UsuarioCadastro extends javax.swing.JFrame {
         jLabelTitulo = new javax.swing.JLabel();
         jLabelNome = new javax.swing.JLabel();
         jTextFieldNome = new javax.swing.JTextField();
-        jButtonSalvar = new javax.swing.JButton();
-        jButtonSalvar1 = new javax.swing.JButton();
+        jButtonEntrar = new javax.swing.JButton();
+        jButtonCriar = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -55,17 +130,17 @@ public class UsuarioCadastro extends javax.swing.JFrame {
             }
         });
 
-        jButtonSalvar.setText("Entrar em sala existente");
-        jButtonSalvar.addActionListener(new java.awt.event.ActionListener() {
+        jButtonEntrar.setText("Entrar em sala existente");
+        jButtonEntrar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonSalvarActionPerformed(evt);
+                jButtonEntrarActionPerformed(evt);
             }
         });
 
-        jButtonSalvar1.setText("Criar nova sala");
-        jButtonSalvar1.addActionListener(new java.awt.event.ActionListener() {
+        jButtonCriar.setText("Criar nova sala");
+        jButtonCriar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonSalvar1ActionPerformed(evt);
+                jButtonCriarActionPerformed(evt);
             }
         });
 
@@ -87,9 +162,9 @@ public class UsuarioCadastro extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel1))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelPrincipalLayout.createSequentialGroup()
-                        .addComponent(jButtonSalvar)
+                        .addComponent(jButtonEntrar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButtonSalvar1, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jButtonCriar, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(25, Short.MAX_VALUE))
         );
         jPanelPrincipalLayout.setVerticalGroup(
@@ -105,8 +180,8 @@ public class UsuarioCadastro extends javax.swing.JFrame {
                     .addComponent(jTextFieldNome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(31, 31, 31)
                 .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonSalvar)
-                    .addComponent(jButtonSalvar1))
+                    .addComponent(jButtonEntrar)
+                    .addComponent(jButtonCriar))
                 .addContainerGap(33, Short.MAX_VALUE))
         );
 
@@ -132,30 +207,29 @@ public class UsuarioCadastro extends javax.swing.JFrame {
 
     }//GEN-LAST:event_jTextFieldNomeKeyReleased
 
-    private void jButtonSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSalvarActionPerformed
+    private void jButtonEntrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEntrarActionPerformed
         // TODO add your handling code here:
-        String nome = this.jTextFieldNome.getText();
-        /*Cliente c = null;
-
-        if(!nome.isEmpty() && !listaAssin.isEmpty()){
-            c = new Cliente(nome, listaAssin);
-        }else{
-            JOptionPane.showMessageDialog(this, "Verifique o nome e "
-                + "os tópicos assinados", "Tente novamente!", JOptionPane.ERROR_MESSAGE);
-            return;
+        if(existeSala() && criarUsuario()){
+            try {
+                new SalasListagem(this.usuario, this.space).setVisible(true);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            this.dispose();
         }
+    }//GEN-LAST:event_jButtonEntrarActionPerformed
 
-        try {
-            new ClienteSubscriber(c).setVisible(true);
-        } catch (Exception ex) {
-            Logger.getLogger(ClienteCadastro.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        this.dispose();*/
-    }//GEN-LAST:event_jButtonSalvarActionPerformed
-
-    private void jButtonSalvar1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSalvar1ActionPerformed
+    private void jButtonCriarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCriarActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButtonSalvar1ActionPerformed
+        if(criarUsuario()){
+            try {
+                new SalaCadastro(this.usuario, this.space).setVisible(true);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            this.dispose();
+        }
+    }//GEN-LAST:event_jButtonCriarActionPerformed
 
     /**
      * @param args the command line arguments
@@ -187,14 +261,18 @@ public class UsuarioCadastro extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new UsuarioCadastro().setVisible(true);
+                try {
+                    new UsuarioCadastro().setVisible(true);
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButtonSalvar;
-    private javax.swing.JButton jButtonSalvar1;
+    private javax.swing.JButton jButtonCriar;
+    private javax.swing.JButton jButtonEntrar;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabelNome;
     private javax.swing.JLabel jLabelTitulo;
