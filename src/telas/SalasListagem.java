@@ -4,13 +4,17 @@
  */
 package telas;
 
+import main.Iniciar;
 import java.awt.Color;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Box;
 import javax.swing.DefaultListModel;
+import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import models.Sala;
 import models.TuplaEspecial;
@@ -58,7 +62,7 @@ public class SalasListagem extends javax.swing.JFrame {
         TuplaEspecial template = new TuplaEspecial();
         TuplaEspecial t = null;
         try {
-            t = (TuplaEspecial) space.read(template, null, 500);
+            t = (TuplaEspecial) space.read(template, null, Lease.FOREVER);
         } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
             Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -68,7 +72,7 @@ public class SalasListagem extends javax.swing.JFrame {
         for (int i = 0; i < t.qtdSalas; i++) {
             try {
                 salaTemplate.id = (i + 1);
-                s = (Sala) space.read(salaTemplate, null, 500);
+                s = (Sala) space.read(salaTemplate, null, Lease.FOREVER);
                 listaSalas.addElement(s.nome);
             } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
                 Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
@@ -79,6 +83,26 @@ public class SalasListagem extends javax.swing.JFrame {
         //this.jListUsuarios.setModel(listaAssin);
     }
     
+    public boolean usuarioExiste(String nomeUsuario, String nomeSala){
+        Usuario uTemplate = new Usuario();
+        uTemplate.nome = nomeUsuario;
+        uTemplate.sala = nomeSala;
+        
+        Usuario u = null;
+        try {
+            u = (Usuario) space.read(uTemplate, null, 500);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (u == null) {
+            return false;
+        }else{
+            JOptionPane.showMessageDialog(this, "Usuário " + nomeUsuario + " já existe na sala " + nomeSala, 
+                    "Tente outra sala!", JOptionPane.ERROR_MESSAGE);
+            return true;
+        }
+        
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -98,6 +122,9 @@ public class SalasListagem extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jListSalas = new javax.swing.JList<>();
         jLabelNome2 = new javax.swing.JLabel();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -171,6 +198,25 @@ public class SalasListagem extends javax.swing.JFrame {
                 .addGap(20, 20, 20))
         );
 
+        jMenu1.setText("Opções");
+        jMenu1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenu1ActionPerformed(evt);
+            }
+        });
+
+        jMenuItem1.setText("Sair");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        setJMenuBar(jMenuBar1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -190,13 +236,13 @@ public class SalasListagem extends javax.swing.JFrame {
     private void jButtonEntrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEntrarActionPerformed
         String select = this.jListSalas.getSelectedValue();
         
-        if(select != null && !select.isEmpty()){
+        if(!usuarioExiste(this.usuario.nome, select) && select != null && !select.isEmpty()){
             
             Usuario u = null;
             Sala s = null;
             try {
                 u = (Usuario) space.take(this.usuario, null, Lease.FOREVER);
-                s = (Sala) space.take(this.sala, null, 500);
+                s = (Sala) space.take(this.sala, null, Lease.FOREVER);
             } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
                 Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -205,18 +251,18 @@ public class SalasListagem extends javax.swing.JFrame {
                 System.exit(0);
             }
             u.sala = select;
-            u.id = s.qtdUsu + 1;
+            s.qtdUsu += 1;
             this.sala = s;
-            this.sala.qtdUsu = u.id;
+            this.usuario = u;
             
             try {
                 this.space.write(this.sala, null, Lease.FOREVER);
-                this.space.write(u, null, Lease.FOREVER);
+                this.space.write(this.usuario, null, Lease.FOREVER);
             } catch (TransactionException | RemoteException ex) {
-                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
             }
             
-            new Chat(this.usuario, this.space, this.sala).setVisible(true);
+            new SalaChat(this.usuario, this.space, this.sala).setVisible(true);
             this.dispose();
         }
     }//GEN-LAST:event_jButtonEntrarActionPerformed
@@ -241,12 +287,23 @@ public class SalasListagem extends javax.swing.JFrame {
                 Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
             }
             
+            ArrayList<String> usuarios = new ArrayList<String>();
+            
             for (int i = 0; i < s.qtdUsu; i++) {
                 try {
-                    uTemplate.id = (i + 1);
-                    u = (Usuario) space.read(uTemplate, null, 500);
+                    u = (Usuario) space.take(uTemplate, null, Lease.FOREVER);
+                    usuarios.add(u.nome);
                     listaUsuarios.addElement(u.nome);
                 } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                    Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            for (String user : usuarios) {
+                uTemplate.nome = user;
+                try {
+                    this.space.write(uTemplate, null, Lease.FOREVER);
+                } catch (TransactionException | RemoteException ex) {
                     Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -254,6 +311,16 @@ public class SalasListagem extends javax.swing.JFrame {
             this.jListUsuarios.setModel(listaUsuarios);
         }
     }//GEN-LAST:event_jListSalasValueChanged
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        new Iniciar(this.usuario, this.space).setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenu1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenu1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenu1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -297,6 +364,9 @@ public class SalasListagem extends javax.swing.JFrame {
     private javax.swing.JLabel jLabelTitulo;
     private javax.swing.JList<String> jListSalas;
     private javax.swing.JList<String> jListUsuarios;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanelPrincipal;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

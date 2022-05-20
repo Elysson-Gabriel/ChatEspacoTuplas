@@ -4,13 +4,16 @@
  */
 package telas;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.JMenu;
 import javax.swing.JTextArea;
+import main.Iniciar;
 import models.Message;
 import models.Sala;
 import models.Usuario;
@@ -23,7 +26,7 @@ import net.jini.space.JavaSpace;
  *
  * @author elysson
  */
-public class Chat extends javax.swing.JFrame {
+public class SalaChat extends javax.swing.JFrame {
     
     private JavaSpace space;
     private Usuario usuario;
@@ -32,23 +35,21 @@ public class Chat extends javax.swing.JFrame {
     /**
      * Creates new form SalasListagem
      */
-    public Chat() {
+    public SalaChat() {
         initComponents();
     }
     
-    public Chat(Usuario usuario, JavaSpace space, Sala sala) {
+    public SalaChat(Usuario usuario, JavaSpace space, Sala sala) {
         initComponents();
         
-        menuBar.add(Box.createHorizontalGlue());
-        JMenu sourceMenu = new JMenu("Sair");
-        menuBar.add(sourceMenu);
-        
         this.usuario = usuario;
+        this.usuario.sala = sala.nome;
         this.space = space;
         this.sala = sala;
         this.msgAtual = this.sala.qtdMsg + 1;//TODO
         
-        jLabelTitulo.setText(sala.nome);
+        jLabelTitulo.setText("USUÁRIO: " + usuario.nome + " - SALA: " + sala.nome);
+        this.setTitle("SALA: " + sala.nome + " - USUÁRIO: " + usuario.nome);
         
         Atualizador a = new Atualizador();
         a.start();
@@ -85,7 +86,7 @@ public class Chat extends javax.swing.JFrame {
                 this.space.write(msg, null, Lease.FOREVER);
                 this.space.write(this.sala, null, Lease.FOREVER);
             } catch (TransactionException | RemoteException ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(SalaChat.class.getName()).log(Level.SEVERE, null, ex);
             }
             
         }
@@ -137,8 +138,12 @@ public class Chat extends javax.swing.JFrame {
         jScrollPane3 = new javax.swing.JScrollPane();
         chatArea = new javax.swing.JTextArea();
         mensagem = new javax.swing.JTextField();
-        menuBar = new javax.swing.JMenuBar();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -158,6 +163,7 @@ public class Chat extends javax.swing.JFrame {
         chatArea.setEditable(false);
         chatArea.setColumns(20);
         chatArea.setRows(5);
+        chatArea.setFocusable(false);
         jScrollPane3.setViewportView(chatArea);
 
         mensagem.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -165,6 +171,12 @@ public class Chat extends javax.swing.JFrame {
                 mensagemKeyPressed(evt);
             }
         });
+
+        jLabel2.setText("Comandos para o chat:");
+
+        jLabel3.setText("/lista - Obter a lista de todos os usuários na sala");
+
+        jLabel4.setText("/[usuario] [mensagem] - Postar mensagem individualmente para outro usuário");
 
         javax.swing.GroupLayout jPanelPrincipalLayout = new javax.swing.GroupLayout(jPanelPrincipal);
         jPanelPrincipal.setLayout(jPanelPrincipalLayout);
@@ -178,7 +190,12 @@ public class Chat extends javax.swing.JFrame {
                         .addComponent(mensagem)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButtonEnviar))
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
+                    .addGroup(jPanelPrincipalLayout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 176, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanelPrincipalLayout.setVerticalGroup(
@@ -187,18 +204,33 @@ public class Chat extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabelTitulo, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 232, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 220, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jButtonEnviar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(mensagem))
-                .addContainerGap())
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel4)
+                .addContainerGap(25, Short.MAX_VALUE))
         );
 
-        jMenu1.setEnabled(false);
-        menuBar.add(jMenu1);
+        jMenu1.setText("Opções");
 
-        setJMenuBar(menuBar);
+        jMenuItem1.setText("Mudar de sala");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -209,8 +241,8 @@ public class Chat extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanelPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(19, Short.MAX_VALUE))
+                .addComponent(jPanelPrincipal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
@@ -227,6 +259,12 @@ public class Chat extends javax.swing.JFrame {
             enviarMensagemChat();
         }
     }//GEN-LAST:event_mensagemKeyPressed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        new Iniciar(this.usuario, this.space).setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -245,21 +283,23 @@ public class Chat extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Chat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(SalaChat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Chat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(SalaChat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Chat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(SalaChat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Chat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(SalaChat.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+        //</editor-fold>
         //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Chat().setVisible(true);
+                new SalaChat().setVisible(true);
             }
         });
     }
@@ -267,11 +307,15 @@ public class Chat extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea chatArea;
     private javax.swing.JButton jButtonEnviar;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabelTitulo;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanelPrincipal;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTextField mensagem;
-    private javax.swing.JMenuBar menuBar;
     // End of variables declaration//GEN-END:variables
 }

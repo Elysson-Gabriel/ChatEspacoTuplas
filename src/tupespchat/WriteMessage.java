@@ -1,4 +1,4 @@
-package chatesptup;
+package tupespchat;
 
 import models.Message;
 import net.jini.space.JavaSpace;

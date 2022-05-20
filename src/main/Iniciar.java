@@ -2,33 +2,38 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package telas;
+package main;
 
-import chatesptup.Lookup;
+import tupespchat.Lookup;
+import tupespchat.Lookup;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import models.Sala;
 import models.TuplaEspecial;
 import models.Usuario;
 import net.jini.core.entry.UnusableEntryException;
 import net.jini.core.lease.Lease;
 import net.jini.core.transaction.TransactionException;
 import net.jini.space.JavaSpace;
+import telas.SalaCadastro;
+import telas.SalasListagem;
 
 /**
  *
  * @author elysson
  */
-public class UsuarioCadastro extends javax.swing.JFrame {
+public class Iniciar extends javax.swing.JFrame {
     
     private JavaSpace space;
     private Usuario usuario;
+    private boolean criacao;
     /**
      * Creates new form UsuarioCadastro
      * @throws java.lang.ClassNotFoundException
      */
-    public UsuarioCadastro() throws ClassNotFoundException {
+    public Iniciar() throws ClassNotFoundException {
         initComponents();
         
         System.out.println("Procurando pelo servico JavaSpace...");
@@ -41,6 +46,51 @@ public class UsuarioCadastro extends javax.swing.JFrame {
         System.out.println("O servico JavaSpace foi encontrado.");
         System.out.println(this.space);
         
+        this.criacao = true;
+        
+    }
+    
+    public Iniciar(Usuario usuario, JavaSpace space){
+        initComponents();
+        
+        this.usuario = usuario;
+        this.space = space;
+        
+        this.jLabelTitulo.setText("Mudança de sala do usuário");
+        this.jTextFieldNome.setText(usuario.nome);
+        this.jTextFieldNome.setEnabled(false);
+        
+        this.criacao = false;
+        
+        Usuario uTemplate = new Usuario();
+        uTemplate.nome = usuario.nome;
+        
+        Sala sTemplate = new Sala();
+        sTemplate.nome = usuario.sala;
+
+        Usuario u = null;
+        
+        try {
+            u = (Usuario) space.take(uTemplate, null, Lease.FOREVER);
+            u.sala = "";
+            this.usuario = u;
+            this.space.write(this.usuario, null, Lease.FOREVER);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        Sala s = null;
+        
+        if(usuario.sala != null && !usuario.sala.equals("")){
+            try {
+                s = (Sala) space.take(sTemplate, null, Lease.FOREVER);
+                s.qtdUsu -= 1;
+                this.space.write(s, null, Lease.FOREVER);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
     }
     
     public boolean criarUsuario(){
@@ -52,19 +102,22 @@ public class UsuarioCadastro extends javax.swing.JFrame {
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
             return false;
             
-        }else if(nome.isEmpty()){
+        }else if(existeUsuario(nome) && criacao){
             JOptionPane.showMessageDialog(this, "Nome de usuário já está sendo utilizado", 
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
             return false;
             
+        }else if(!criacao){
+            retorno = true;
         }else{
             this.usuario = new Usuario();
             this.usuario.nome = nome;
+            this.usuario.sala = "";
             try {
                 this.space.write(usuario, null, Lease.FOREVER);
                 retorno = true;
             } catch (TransactionException | RemoteException ex) {
-                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         
@@ -86,10 +139,25 @@ public class UsuarioCadastro extends javax.swing.JFrame {
                 retorno = true;
             }
         } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
-            Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return retorno;
+    }
+    
+    public boolean existeUsuario(String nomeUsuario){
+        Usuario uTemplate = new Usuario();
+        uTemplate.nome = nomeUsuario;
+        Usuario u = null;
+        try {
+            u = (Usuario) space.read(uTemplate, null, 500);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (u == null) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -213,7 +281,7 @@ public class UsuarioCadastro extends javax.swing.JFrame {
             try {
                 new SalasListagem(this.usuario, this.space).setVisible(true);
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
             }
             this.dispose();
         }
@@ -225,7 +293,7 @@ public class UsuarioCadastro extends javax.swing.JFrame {
             try {
                 new SalaCadastro(this.usuario, this.space).setVisible(true);
             } catch (ClassNotFoundException ex) {
-                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
             }
             this.dispose();
         }
@@ -248,23 +316,24 @@ public class UsuarioCadastro extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(UsuarioCadastro.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Iniciar.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(UsuarioCadastro.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Iniciar.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(UsuarioCadastro.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Iniciar.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(UsuarioCadastro.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Iniciar.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    new UsuarioCadastro().setVisible(true);
+                    new Iniciar().setVisible(true);
                 } catch (ClassNotFoundException ex) {
-                    Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });

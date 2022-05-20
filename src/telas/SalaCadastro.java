@@ -4,10 +4,13 @@
  */
 package telas;
 
-import chatesptup.Lookup;
+import main.Iniciar;
+import tupespchat.Lookup;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Box;
+import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import models.Message;
 import models.Sala;
@@ -50,7 +53,7 @@ public class SalaCadastro extends javax.swing.JFrame {
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
             return false;
             
-        }else if(nome.isEmpty()){
+        }else if(salaExiste(nome)){
             JOptionPane.showMessageDialog(this, "Sala " + nome + " já existe", 
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -81,21 +84,36 @@ public class SalaCadastro extends javax.swing.JFrame {
                 System.exit(0);
             }
             u.sala = nome;
-            u.id = 1;
-            sala.id = t.qtdSalas;
-            sala.qtdUsu = u.id;
+            this.sala.id = t.qtdSalas;
+            this.sala.qtdUsu = 1;
+            this.usuario = u;
             
             try {
-                this.space.write(sala, null, Lease.FOREVER);
-                this.space.write(u, null, Lease.FOREVER);
+                this.space.write(this.sala, null, Lease.FOREVER);
+                this.space.write(this.usuario, null, Lease.FOREVER);
                 this.space.write(t, null, Lease.FOREVER);
                 retorno = true;
             } catch (TransactionException | RemoteException ex) {
-                Logger.getLogger(UsuarioCadastro.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Iniciar.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         
         return retorno;
+    }
+    
+    public boolean salaExiste(String nomeSala){
+        Sala sTemplate = new Sala();
+        sTemplate.nome = nomeSala;
+        Sala s = null;
+        try {
+            s = (Sala) space.read(sTemplate, null, 500);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (s == null) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -112,6 +130,9 @@ public class SalaCadastro extends javax.swing.JFrame {
         jLabelNome = new javax.swing.JLabel();
         jTextFieldNome = new javax.swing.JTextField();
         jButtonCriar = new javax.swing.JButton();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -172,6 +193,25 @@ public class SalaCadastro extends javax.swing.JFrame {
                 .addContainerGap(36, Short.MAX_VALUE))
         );
 
+        jMenu1.setText("Opções");
+        jMenu1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenu1ActionPerformed(evt);
+            }
+        });
+
+        jMenuItem1.setText("Sair");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        setJMenuBar(jMenuBar1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -197,10 +237,21 @@ public class SalaCadastro extends javax.swing.JFrame {
     private void jButtonCriarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCriarActionPerformed
         // TODO add your handling code here:
         if(criarSala()){
-            new Chat(this.usuario, this.space, this.sala).setVisible(true);
+            new SalaChat(this.usuario, this.space, this.sala).setVisible(true);
             this.dispose();
         }
     }//GEN-LAST:event_jButtonCriarActionPerformed
+
+    private void jMenu1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenu1ActionPerformed
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_jMenu1ActionPerformed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        new Iniciar(this.usuario, this.space).setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -242,6 +293,9 @@ public class SalaCadastro extends javax.swing.JFrame {
     private javax.swing.JButton jButtonCriar;
     private javax.swing.JLabel jLabelNome;
     private javax.swing.JLabel jLabelTitulo;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanelPrincipal;
     private javax.swing.JTextField jTextFieldNome;
     // End of variables declaration//GEN-END:variables

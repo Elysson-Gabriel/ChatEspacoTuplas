@@ -1,4 +1,4 @@
-package chatesptup;
+package tupespchat;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
