@@ -4,8 +4,6 @@
  */
 package main;
 
-import tupespchat.Lookup;
-import tupespchat.Lookup;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,8 +15,8 @@ import net.jini.core.entry.UnusableEntryException;
 import net.jini.core.lease.Lease;
 import net.jini.core.transaction.TransactionException;
 import net.jini.space.JavaSpace;
-import telas.SalaCadastro;
-import telas.SalasListagem;
+import pages.SalaCadastro;
+import pages.SalasListagem;
 
 /**
  *
@@ -97,8 +95,8 @@ public class Iniciar extends javax.swing.JFrame {
         String nome = jTextFieldNome.getText();
         boolean retorno = false;
         
-        if(nome.isEmpty()){
-            JOptionPane.showMessageDialog(this, "Informe o nome do usuário", 
+        if(nome.isEmpty() || nome.contains(" ")){
+            JOptionPane.showMessageDialog(this, "Informe um nome de usuário válido", 
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
             return false;
             
@@ -113,6 +111,7 @@ public class Iniciar extends javax.swing.JFrame {
             this.usuario = new Usuario();
             this.usuario.nome = nome;
             this.usuario.sala = "";
+            this.usuario.qtdMsg = 0;
             try {
                 this.space.write(usuario, null, Lease.FOREVER);
                 retorno = true;
@@ -178,6 +177,7 @@ public class Iniciar extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanelPrincipal.setBackground(new java.awt.Color(255, 255, 255));
 

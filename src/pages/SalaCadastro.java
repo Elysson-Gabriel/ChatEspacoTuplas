@@ -2,17 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package telas;
+package pages;
 
 import main.Iniciar;
-import tupespchat.Lookup;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Box;
-import javax.swing.JMenu;
 import javax.swing.JOptionPane;
-import models.Message;
 import models.Sala;
 import models.TuplaEspecial;
 import models.Usuario;
@@ -135,6 +131,7 @@ public class SalaCadastro extends javax.swing.JFrame {
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanelPrincipal.setBackground(new java.awt.Color(255, 255, 255));
 

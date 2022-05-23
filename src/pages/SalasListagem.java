@@ -2,19 +2,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package telas;
+package pages;
 
 import main.Iniciar;
-import java.awt.Color;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Box;
 import javax.swing.DefaultListModel;
-import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import models.Sala;
 import models.TuplaEspecial;
@@ -127,6 +122,7 @@ public class SalasListagem extends javax.swing.JFrame {
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanelPrincipal.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -288,19 +284,22 @@ public class SalasListagem extends javax.swing.JFrame {
             }
             
             ArrayList<String> usuarios = new ArrayList<String>();
+            ArrayList<Integer> qtdMsgUsu = new ArrayList<Integer>();
             
             for (int i = 0; i < s.qtdUsu; i++) {
                 try {
                     u = (Usuario) space.take(uTemplate, null, Lease.FOREVER);
                     usuarios.add(u.nome);
+                    qtdMsgUsu.add(u.qtdMsg);
                     listaUsuarios.addElement(u.nome);
                 } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
                     Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
             
-            for (String user : usuarios) {
-                uTemplate.nome = user;
+            for (int i = 0; i < usuarios.size(); i++) {
+                uTemplate.nome = usuarios.get(i);
+                uTemplate.qtdMsg = qtdMsgUsu.get(i);
                 try {
                     this.space.write(uTemplate, null, Lease.FOREVER);
                 } catch (TransactionException | RemoteException ex) {

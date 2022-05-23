@@ -3,10 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/models/Message.java</file>
             <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/telas/SalasListagem.java</file>
-            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/telas/UsuarioCadastro.java</file>
+            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/main/Iniciar.java</file>
             <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/telas/SalaCadastro.java</file>
-            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/telas/Chat.java</file>
+            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/models/Sala.java</file>
+            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/telas/SalaChat.java</file>
+            <file>file:/C:/Users/estagio2/Documents/NetBeansProjects/chatEspTup/src/models/Usuario.java</file>
         </group>
     </open-files>
 </project-private>

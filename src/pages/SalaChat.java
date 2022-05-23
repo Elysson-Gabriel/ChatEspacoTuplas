@@ -2,17 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package telas;
+package pages;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.AbstractAction;
-import javax.swing.Box;
-import javax.swing.JMenu;
-import javax.swing.JTextArea;
+import javax.swing.JOptionPane;
 import main.Iniciar;
 import models.Message;
 import models.Sala;
@@ -31,7 +27,9 @@ public class SalaChat extends javax.swing.JFrame {
     private JavaSpace space;
     private Usuario usuario;
     private Sala sala;
-    private int msgAtual; 
+    private int msgAtualPub;
+    private int msgAtualPriv;
+    
     /**
      * Creates new form SalasListagem
      */
@@ -46,21 +44,32 @@ public class SalaChat extends javax.swing.JFrame {
         this.usuario.sala = sala.nome;
         this.space = space;
         this.sala = sala;
-        this.msgAtual = this.sala.qtdMsg + 1;//TODO
+        this.msgAtualPub = this.sala.qtdMsg + 1;
+        this.msgAtualPriv = this.usuario.qtdMsg + 1;
         
         jLabelTitulo.setText("USUÁRIO: " + usuario.nome + " - SALA: " + sala.nome);
         this.setTitle("SALA: " + sala.nome + " - USUÁRIO: " + usuario.nome);
         
-        Atualizador a = new Atualizador();
-        a.start();
+        AtualizaChatPublico chatPublico = new AtualizaChatPublico();
+        chatPublico.start();
+        
+        AtualizaChatPrivado chatPrivado = new AtualizaChatPrivado();
+        chatPrivado.start();
     }
     
     public void enviarMensagemChat(){
         String message = "";
         message = mensagem.getText();
-
-        if(!message.isEmpty()){
-            //chatArea.setText(chatArea.getText() + "\n Eu: " + msg);
+        
+        if(message.equals("/lista")){
+            exibeUsuarios();
+        }else if(message.matches("/.* .*")){
+            int idx = message.indexOf(" ");
+            String uDestino = message.substring(1, idx);
+            String mDestino = message.substring(idx+1, message.length());
+            
+            enviarMensagemPrivada(uDestino, mDestino);
+        }else if(!message.isEmpty()){
             Sala sTemplate = new Sala();
             sTemplate.nome = this.sala.nome;
             Sala s = null;
@@ -94,25 +103,151 @@ public class SalaChat extends javax.swing.JFrame {
         mensagem.setText("");
     }
     
-    private class Atualizador extends Thread{
+    public void enviarMensagemPrivada(String uDestino, String mDestino){
+        if(!mDestino.isEmpty()){
+            Usuario uTemplate = new Usuario();
+            uTemplate.nome = uDestino;
+            uTemplate.sala = this.sala.nome;
+            Usuario u = null;
+            try {
+                u = (Usuario) space.take(uTemplate, null, 500);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if (u == null) {
+                JOptionPane.showMessageDialog(this, "Usuário " + uDestino + "não está na sala."
+                        + " Utilize o comando /lista no chat para obter os usuários da sala", 
+                    "Tente novamente!", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            Message msg = new Message();
+            msg.content = mDestino;
+            msg.usuario = this.usuario.nome;
+            u.qtdMsg += 1;
+            msg.ordem = u.qtdMsg;
+            msg.destino = uDestino;
+            //this.usuario = u;
+            
+            try {
+                this.space.write(msg, null, Lease.FOREVER);
+                this.space.write(u, null, Lease.FOREVER);
+                
+                chatArea.setText(chatArea.getText() + "\n[Mensagem para usuário " + msg.destino
+                        + "]: " + msg.content);
+                chatArea.setCaretPosition(chatArea.getDocument().getLength());
+                
+            } catch (TransactionException | RemoteException ex) {
+                Logger.getLogger(SalaChat.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        }
 
-        public Atualizador() {
+        this.mensagem.setText("");
+    }
+    
+    public void exibeUsuarios(){
+        
+        Sala sTemplate = new Sala();
+        sTemplate.nome = this.sala.nome;
+        Sala s = null;
+        
+        Usuario uTemplate = new Usuario();
+        uTemplate.sala = this.sala.nome;
+        Usuario u = null;
+
+        try {
+            s = (Sala) space.read(sTemplate, null, Lease.FOREVER);
+        } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+            Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        this.sala = s;
+
+        ArrayList<String> usuarios = new ArrayList<String>();
+        ArrayList<Integer> qtdMsgUsu = new ArrayList<Integer>();
+
+        for (int i = 0; i < s.qtdUsu; i++) {
+            try {
+                u = (Usuario) space.take(uTemplate, null, Lease.FOREVER);
+                usuarios.add(u.nome);
+                qtdMsgUsu.add(u.qtdMsg);
+            } catch (UnusableEntryException | TransactionException | InterruptedException | RemoteException ex) {
+                Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        String listUsu = "\n*********************************\n"
+                + "- Lista de usuários na sala " + this.sala.nome + ": ";
+        
+        for (int i = 0; i < usuarios.size(); i++) {
+            uTemplate.nome = usuarios.get(i);
+            uTemplate.qtdMsg = qtdMsgUsu.get(i);
+            try {
+                this.space.write(uTemplate, null, Lease.FOREVER);
+                listUsu += "\n " + usuarios.get(i);
+            } catch (TransactionException | RemoteException ex) {
+                Logger.getLogger(SalasListagem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        chatArea.setText(chatArea.getText() + "\n" + listUsu + "\n*********************************\n");
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+        
+    }
+    
+    private class AtualizaChatPublico extends Thread{
+
+        public AtualizaChatPublico() {
         }
 
         @Override
         public void run(){
             while(true){
                 Message template = new Message();
-                template.ordem = msgAtual;
+                template.ordem = msgAtualPub;
                 template.destino = sala.nome;
                 Message msg;
                 try {
                     msg = (Message) space.read(template, null, Lease.FOREVER);
 
                     if(msg != null){
-                        msgAtual += 1;
+                        msgAtualPub += 1;
                         chatArea.setText(chatArea.getText() + "\n" + msg.usuario + ": " + msg.content);
                         chatArea.setCaretPosition(chatArea.getDocument().getLength());
+                        Thread.sleep(10);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+    
+    private class AtualizaChatPrivado extends Thread{
+
+        public AtualizaChatPrivado() {
+        }
+
+        @Override
+        public void run(){
+            while(true){
+                Message template = new Message();
+                template.ordem = msgAtualPriv;
+                template.destino = usuario.nome;
+                Message msg;
+                try {
+                    msg = (Message) space.read(template, null, Lease.FOREVER);
+
+                    if(msg != null){
+                        msgAtualPriv += 1;
+                        
+                        if(!msg.usuario.equals(msg.destino)){
+                            chatArea.setText(chatArea.getText() + "\n[Mensagem individual] " + msg.usuario + ": " + msg.content);
+                            chatArea.setCaretPosition(chatArea.getDocument().getLength());
+                        }
+                        
                         Thread.sleep(10);
                     }
                 } catch (Exception e) {
@@ -146,6 +281,7 @@ public class SalaChat extends javax.swing.JFrame {
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanelPrincipal.setBackground(new java.awt.Color(255, 255, 255));
 
