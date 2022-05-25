@@ -115,7 +115,7 @@ public class SalaChat extends javax.swing.JFrame {
                 Logger.getLogger(SalaCadastro.class.getName()).log(Level.SEVERE, null, ex);
             }
             if (u == null) {
-                JOptionPane.showMessageDialog(this, "Usuário " + uDestino + "não está na sala."
+                JOptionPane.showMessageDialog(this, "Usuário " + uDestino + " não está na sala."
                         + " Utilize o comando /lista no chat para obter os usuários da sala", 
                     "Tente novamente!", JOptionPane.ERROR_MESSAGE);
                 return;
